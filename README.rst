@@ -1,4 +1,18 @@
-country converter
+[Deep Discovery fork of] country converter
+
+=================
+
+Note: D&D has made this library much faster.
+
+The speed went up from 1M names per 420sec to 1M names per 9 sec. I also did a few changes to improve also the quality of the results.
+
+* Added caching
+* Added multiregex
+* Removed repeatedly queries to dataframes and replaced by dicts
+* Added support for profiling with a script
+* Added some regexes to improve quality (and support a few non-english names)
+* The compatibility should not be broken.
+
 =================
 
 The country converter (coco) is a Python package to convert and match country names between different classifications and between different naming versions. Internally it uses regular expressions to match country names. Coco can also be used to build aggregation concordance matrices between different classification schemes.
