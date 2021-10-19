@@ -509,7 +509,7 @@ class CountryConverter:
 
 
     @lru_cache(maxsize=5000)
-    def convert(
+    def _convert(
         self,
         names,
         src=None,
@@ -640,6 +640,73 @@ class CountryConverter:
             return outlist[0]
         else:
             return outlist
+
+    def convert(
+        self,
+        names,
+        src=None,
+        to="ISO3",
+        enforce_list=False,
+        not_found="not found",
+        exclude_prefix=None
+    ):
+        """Convert names from a list to another list.
+
+        Note
+        ----
+        A lot of the functionality can also be done directly in Pandas
+        DataFrames.
+        For example:
+        coco = CountryConverter()
+        names = ['USA', 'SWZ', 'PRI']
+        coco.data[coco.data['ISO3'].isin(names)][['ISO2', 'continent']]
+
+        Parameters
+        ----------
+        names : str or list like
+            Countries in 'src' classification to convert
+            to 'to' classification
+
+        src : str, optional
+            Source classification. If None (default), each passed name is
+            checked if it is a number (assuming UNnumeric) or 2 (ISO2) or
+            3 (ISO3) characters long; for longer names 'regex' is assumed.
+
+        to : str, optional
+            Output classification (valid index of the country_data file),
+            default: ISO3
+
+        enforce_list : boolean, optional
+            If True, enforces the output to be list (if only one name was
+            passed) or to be a list of lists (if multiple names were passed).
+            If False (default), the output will be a string (if only one name
+            was passed) or a list of str and/or lists (str if a one to one
+            matching, list otherwise).
+
+        not_found : str, optional
+            Fill in value for none found entries. If None, keep the input value
+            (default: 'not found')
+
+        exclude_prefix : list of valid regex strings
+            List of indicators which negate the subsequent country/region.
+            These prefixes and everything following will not be converted.
+            E.g. 'Asia excluding China' becomes 'Asia' and
+            'China excluding Hong Kong' becomes 'China' prior to conversion
+            Default: ['excl\\w.*', 'without', 'w/o'])
+
+        Returns
+        -------
+        list or str, depending on enforce_list
+
+        """
+        return self._convert(
+            tuple(names) if isinstance(names, list) else names,
+            src=src,
+            to=to,
+            enforce_list=enforce_list,
+            not_found=not_found,
+            exclude_prefix=exclude_prefix
+        )
 
     @property
     def valid_class(self):
