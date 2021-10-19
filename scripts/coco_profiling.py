@@ -8,7 +8,6 @@ print("Instantiation of CountryConverter obj ...")
 cc = coco.CountryConverter()
 print("Done")
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Profiling performance")
     parser.add_argument(
@@ -40,6 +39,10 @@ def clean_all_names(filepath: str):
 
 
 def main():
+    cc._apply_multiregex.cache_clear()
+    for i in range(10000):
+        cc.convert("GBR")
+    return
     logging.basicConfig(level=logging.ERROR)
     args = parse_args()
     filepath = args.data
