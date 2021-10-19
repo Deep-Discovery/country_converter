@@ -472,9 +472,13 @@ class CountryConverter:
         )
 
         self._conversion_data = dict()
+        self._iso2_to_entry = dict()
+        self._iso3_to_entry = dict()
 
         for i, (entry_index, entry_row) in enumerate(self.data.iterrows()):
             self._conversion_data[entry_index] = entry_row.to_dict()
+            self._iso2_to_entry[entry_row["ISO2"].lower()] = entry_index
+            self._iso3_to_entry[entry_row["ISO3"].lower()] = entry_index
 
         # the following section adds shortcuts to all classifications to the
         # class.
@@ -503,6 +507,8 @@ class CountryConverter:
     def _find_country(self, name, to):
         return [entry[to] for entry in self._apply_multiregex(name)]
 
+
+    @lru_cache(maxsize=5000)
     def convert(
         self,
         names,
@@ -588,9 +594,17 @@ class CountryConverter:
             else:
                 src_format = self._validate_input_para(src, self.data.columns.tolist())
 
+            result_list = []
+
             if src_format.lower() == "regex":
                 result_list = self._find_country(spec_name.lower(), to[0])
-            else:
+            elif src_format.lower() == "iso2" and spec_name.lower() in self._iso2_to_entry:
+                entry_id = self._iso2_to_entry[spec_name.lower()]
+                result_list = [self._conversion_data[entry_id][to[0]]]
+            elif src_format.lower() == "iso3" and spec_name.lower() in self._iso3_to_entry:
+                entry_id = self._iso3_to_entry[spec_name.lower()]
+                result_list = [self._conversion_data[entry_id][to[0]]]
+            elif src_format not in ("regex", "iso2", "iso3"):
                 _match_col = (
                     self.data[src_format]
                     .astype(str)
