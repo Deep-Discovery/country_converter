@@ -128,32 +128,6 @@ def test_alternative_names(get_regex_test_data):
         )
 
 
-def test_additional_country_file():
-    converter_basic = coco.CountryConverter()
-    converter_extended = coco.CountryConverter(additional_data=custom_data)
-
-    assert converter_basic.convert("Congo") == "COG"
-    assert converter_extended.convert("Congo") == "COD"
-    assert converter_extended.convert("wirtland", to="name_short") == "Wirtland"
-    assert 250 == converter_extended.convert("Congo", to="FAOcode")
-
-
-def test_additional_country_data():
-    add_data = pd.DataFrame.from_dict(
-        {
-            "name_short": ["xxx country"],
-            "name_official": ["longer xxx country name"],
-            "regex": ["xxx country"],
-            "ISO3": ["XXX"],
-        }
-    )
-    converter_extended = coco.CountryConverter(additional_data=add_data)
-    assert "xxx country" == converter_extended.convert(
-        "XXX", src="ISO3", to="name_short"
-    )
-    assert pd.isna(converter_extended.convert("XXX", src="ISO3", to="continent"))
-
-
 def test_UNmember():
     cc = coco.CountryConverter(only_UNmember=True)
     assert len(cc.data) == 193
@@ -610,3 +584,8 @@ def test_non_matching():
             assert not_found_indicator == coco.convert(
                 reg_name, src="regex", to="ISO3", not_found=not_found_indicator
             )
+
+
+def test_regex_starting_with_plus():
+    cc = coco.CountryConverter()
+    assert "not found" == coco.convert("+919815450855", to="ISO2")
