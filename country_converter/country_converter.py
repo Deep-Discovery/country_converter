@@ -11,7 +11,7 @@ from functools import lru_cache
 from country_converter.multiregex import Multiregex
 
 import pandas as pd
-
+from pandas import Series, Index
 from country_converter.version import __version__
 
 COUNTRY_DATA_FILE = os.path.join(
@@ -220,7 +220,7 @@ def match(
     if isinstance(list_b, tuple):
         list_b = list(list_b)
 
-    coco = CountryConverter(country_data, additional_data)
+    coco = CountryConverter(country_data)  # , additional_data)
 
     name_dict_a = dict()
     match_dict_a = dict()
@@ -323,7 +323,7 @@ def convert(*args, **kargs):
     """
     init = {
         "country_data": COUNTRY_DATA_FILE,
-        "additional_data": None,
+        # "additional_data": None,
         "only_UNmember": False,
         "include_obsolete": False,
     }
@@ -378,7 +378,6 @@ class CountryConverter:
     def __init__(
         self,
         country_data=COUNTRY_DATA_FILE,
-        additional_data=None,
         only_UNmember=False,
         include_obsolete=False,
     ):
@@ -407,6 +406,8 @@ class CountryConverter:
             False (default) only includes currently valid countries.
 
         """
+        # for backward compatibility (additional_data is not supported)
+        additional_data = None
 
         must_be_unique = ["name_short", "name_official", "regex"]
         must_be_string = must_be_unique + (
@@ -507,7 +508,6 @@ class CountryConverter:
     def _find_country(self, name, to):
         return [entry[to] for entry in self._apply_multiregex(name)]
 
-
     @lru_cache(maxsize=5000)
     def _convert(
         self,
@@ -516,7 +516,7 @@ class CountryConverter:
         to="ISO3",
         enforce_list=False,
         not_found="not found",
-        exclude_prefix=None
+        exclude_prefix=None,
     ):
         """Convert names from a list to another list.
 
@@ -567,6 +567,7 @@ class CountryConverter:
         list or str, depending on enforce_list
 
         """
+
         if exclude_prefix is None:
             exclude_prefix = ["excl\\w.*", "without", "w/o"]
 
@@ -598,10 +599,14 @@ class CountryConverter:
 
             if src_format.lower() == "regex":
                 result_list = self._find_country(spec_name.lower(), to[0])
-            elif src_format.lower() == "iso2" and spec_name.lower() in self._iso2_to_entry:
+            elif (
+                src_format.lower() == "iso2" and spec_name.lower() in self._iso2_to_entry
+            ):
                 entry_id = self._iso2_to_entry[spec_name.lower()]
                 result_list = [self._conversion_data[entry_id][to[0]]]
-            elif src_format.lower() == "iso3" and spec_name.lower() in self._iso3_to_entry:
+            elif (
+                src_format.lower() == "iso3" and spec_name.lower() in self._iso3_to_entry
+            ):
                 entry_id = self._iso3_to_entry[spec_name.lower()]
                 result_list = [self._conversion_data[entry_id][to[0]]]
             elif src_format not in ("regex", "iso2", "iso3"):
@@ -615,7 +620,7 @@ class CountryConverter:
                     etr[0]
                     for etr in self.data[
                         _match_col.str.contains(
-                            "^" + spec_name + "$", flags=re.IGNORECASE, na=False
+                            f"^{re.escape(spec_name)}$", flags=re.IGNORECASE, na=False
                         )
                     ][to].values
                 ]
@@ -648,7 +653,7 @@ class CountryConverter:
         to="ISO3",
         enforce_list=False,
         not_found="not found",
-        exclude_prefix=None
+        exclude_prefix=None,
     ):
         """Convert names from a list to another list.
 
@@ -700,12 +705,12 @@ class CountryConverter:
 
         """
         return self._convert(
-            tuple(names) if isinstance(names, list) else names,
+            tuple(names) if isinstance(names, (list, set, Series, Index)) else names,
             src=src,
             to=to,
             enforce_list=enforce_list,
             not_found=not_found,
-            exclude_prefix=exclude_prefix
+            exclude_prefix=exclude_prefix,
         )
 
     @property
@@ -979,7 +984,7 @@ def main():
     args.to = args.to if args.to else "name_short"
 
     coco = CountryConverter(
-        additional_data=args.additional_data,
+        # additional_data=args.additional_data,
         include_obsolete=args.include_obsolete,
         only_UNmember=args.UNmember_only,
     )
